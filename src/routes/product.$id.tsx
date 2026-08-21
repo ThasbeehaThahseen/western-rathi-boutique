@@ -55,17 +55,20 @@ export const Route = createFileRoute("/product/$id")({
 
 function ProductPage() {
   const { id } = Route.useParams();
-  const navigate = useNavigate();
+  const search = Route.useSearch();
   const { data: product } = useSuspenseQuery(productQuery(id));
   const { data: related } = useSuspenseQuery(productsQuery(product?.category_slug ?? ""));
   const { addItem } = useCart();
 
   const [active, setActive] = useState(0);
-  const [size, setSize] = useState<string | null>(null);
-  const [colour, setColour] = useState<string | null>(null);
+  const [size, setSize] = useState<string | null>(search.size || null);
+  const [colour, setColour] = useState<string | null>(search.colour || null);
   const [qty, setQty] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
+  const [buyOpen, setBuyOpen] = useState(false);
+  const [buyError, setBuyError] = useState<string | null>(null);
+  const [buyForm, setBuyForm] = useState({ name: "", phone: "", address: "" });
   const [showChart, setShowChart] = useState(false);
   const [zoom, setZoom] = useState<{ x: number; y: number } | null>(null);
   const frameRef = useRef<HTMLDivElement>(null);
