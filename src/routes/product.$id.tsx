@@ -15,8 +15,8 @@ import { useCart } from "@/lib/cart";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/product/$id")({
-  head: ({ loaderData }) => {
-    const name = loaderData?.name;
+  head: (ctx) => {
+    const name = (ctx.loaderData as { name?: string } | undefined)?.name;
     return {
       meta: name
         ? [
