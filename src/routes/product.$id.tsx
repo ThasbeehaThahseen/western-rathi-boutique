@@ -1,22 +1,23 @@
-import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { Check, ChevronLeft, Ruler, ShoppingBag } from "lucide-react";
 import { productQuery, productsQuery, productImage } from "@/lib/catalog";
 import { ProductCard } from "@/components/site/ProductCard";
-import {
-  COLOUR_SWATCHES,
-  SIZE_CHART,
-  TERMS,
-  formatPrice,
-  whatsappLink,
-} from "@/lib/brand";
+import { COLOUR_SWATCHES, SIZE_CHART, TERMS, formatPrice } from "@/lib/brand";
 import { useCart } from "@/lib/cart";
+import { openWhatsAppOrder } from "@/lib/order";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/product/$id")({
-  head: ({ loaderData }) => {
-    const name = loaderData?.name;
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { size?: string; colour?: string } => ({
+    ...(typeof search["size"] === "string" ? { size: search["size"] } : {}),
+    ...(typeof search["colour"] === "string" ? { colour: search["colour"] } : {}),
+  }),
+  head: (ctx) => {
+    const name = (ctx.loaderData as { name?: string } | undefined)?.name;
     return {
       meta: name
         ? [
@@ -55,17 +56,20 @@ export const Route = createFileRoute("/product/$id")({
 
 function ProductPage() {
   const { id } = Route.useParams();
-  const navigate = useNavigate();
+  const search = Route.useSearch();
   const { data: product } = useSuspenseQuery(productQuery(id));
   const { data: related } = useSuspenseQuery(productsQuery(product?.category_slug ?? ""));
   const { addItem } = useCart();
 
   const [active, setActive] = useState(0);
-  const [size, setSize] = useState<string | null>(null);
-  const [colour, setColour] = useState<string | null>(null);
+  const [size, setSize] = useState<string | null>(search.size || null);
+  const [colour, setColour] = useState<string | null>(search.colour || null);
   const [qty, setQty] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
+  const [buyOpen, setBuyOpen] = useState(false);
+  const [buyError, setBuyError] = useState<string | null>(null);
+  const [buyForm, setBuyForm] = useState({ name: "", phone: "", address: "" });
   const [showChart, setShowChart] = useState(false);
   const [zoom, setZoom] = useState<{ x: number; y: number } | null>(null);
   const frameRef = useRef<HTMLDivElement>(null);
@@ -108,13 +112,23 @@ function ProductPage() {
 
   const handleBuyNow = () => {
     if (!validate()) return;
-    addItem(buildItem());
-    void navigate({ to: "/cart" });
+    setBuyError(null);
+    setBuyOpen(true);
   };
 
-  const enquiry = whatsappLink(
-    `Hi Western Rathi! I'd like to know more about *${product.name}* (${formatPrice(product.price)}).`,
-  );
+  const submitBuyNow = () => {
+    if (buyForm.name.trim().length < 2) return setBuyError("Please enter your name.");
+    if (!/^[6-9]\d{9}$/.test(buyForm.phone.replace(/\D/g, "").slice(-10)))
+      return setBuyError("Enter a valid 10-digit mobile number.");
+    if (buyForm.address.trim().length < 10) return setBuyError("Please enter your full address.");
+    setBuyError(null);
+    openWhatsAppOrder([buildItem()], {
+      name: buyForm.name.trim(),
+      phone: buyForm.phone.replace(/\D/g, "").slice(-10),
+      address: buyForm.address.trim(),
+    });
+    setBuyOpen(false);
+  };
 
   return (
     <div className="mx-auto max-w-6xl px-3 pt-2 pb-8 sm:px-5">
@@ -356,14 +370,55 @@ function ProductPage() {
             </button>
           </div>
 
-          <a
-            href={enquiry}
-            target="_blank"
-            rel="noreferrer noopener"
-            className="mt-2.5 flex items-center justify-center gap-2 rounded-xl bg-whatsapp px-5 py-3.5 text-sm font-semibold text-white transition-transform hover:scale-[1.01]"
-          >
-            Enquire on WhatsApp
-          </a>
+          {buyOpen && (
+            <div className="mt-3 space-y-3 rounded-2xl border border-border/60 bg-card p-4 shadow-[var(--shadow-soft)]">
+              <p className="font-display text-base font-semibold">Your details</p>
+              {(
+                [
+                  { k: "name", label: "Full name", placeholder: "Priya Sharma" },
+                  { k: "phone", label: "WhatsApp number", placeholder: "9876543210" },
+                ] as const
+              ).map((f) => (
+                <div key={f.k}>
+                  <label className="text-xs font-medium text-muted-foreground">{f.label}</label>
+                  <input
+                    value={buyForm[f.k]}
+                    onChange={(e) => setBuyForm((s) => ({ ...s, [f.k]: e.target.value }))}
+                    placeholder={f.placeholder}
+                    className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+              ))}
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Full address</label>
+                <textarea
+                  value={buyForm.address}
+                  onChange={(e) => setBuyForm((s) => ({ ...s, address: e.target.value }))}
+                  rows={3}
+                  placeholder="House / street, area, city, state, pincode"
+                  className="mt-1 w-full resize-none rounded-xl border border-input bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              {buyError && <p className="text-xs text-destructive">{buyError}</p>}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setBuyOpen(false)}
+                  className="rounded-xl border border-border px-4 py-3 text-sm font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={submitBuyNow}
+                  className="flex-1 rounded-xl bg-whatsapp px-5 py-3 text-sm font-semibold text-white"
+                >
+                  Send order on WhatsApp
+                </button>
+              </div>
+            </div>
+          )}
+
 
           <div className="mt-6 rounded-2xl bg-secondary/40 p-4 text-xs leading-relaxed text-muted-foreground">
             <p className="mb-1.5 font-semibold text-foreground/80">Before you order</p>

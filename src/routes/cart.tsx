@@ -2,8 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useCart } from "@/lib/cart";
-import { formatPrice, whatsappLink, WHATSAPP_DISPLAY } from "@/lib/brand";
-import { supabase } from "@/integrations/supabase/client";
+import { formatPrice, WHATSAPP_DISPLAY } from "@/lib/brand";
+import { openWhatsAppOrder } from "@/lib/order";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
@@ -32,30 +32,6 @@ function CartPage() {
 
   const update = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
-  const buildMessage = (orderRef: string) => {
-    const lines = [
-      "*NEW ORDER — WESTERN RATHI*",
-      "",
-      `*Order Ref:* ${orderRef}`,
-      "",
-      "*Items*",
-      ...items.map(
-        (i, n) =>
-          `${n + 1}. ${i.name}\n   Size: ${i.size} | Colour: ${i.colour}\n   Qty: ${i.quantity} × ${formatPrice(i.price)} = ${formatPrice(i.quantity * i.price)}`,
-      ),
-      "",
-      `*Total:* ${formatPrice(subtotal)}`,
-      "",
-      "*Customer Details*",
-      `Name: ${form.name}`,
-      `Phone: ${form.phone}`,
-      `Address: ${form.address}`,
-      `Pincode: ${form.pincode}`,
-    ];
-    if (form.notes.trim()) lines.push(`Notes: ${form.notes}`);
-    lines.push("", "Please confirm availability and share payment details. Thank you!");
-    return lines.join("\n");
-  };
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -68,50 +44,19 @@ function CartPage() {
     return Object.keys(e).length === 0;
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (items.length === 0 || !validate()) return;
     setSending(true);
-    try {
-      const fullAddress = `${form.address.trim()} - ${form.pincode.trim()}${
-        form.notes.trim() ? ` | Notes: ${form.notes.trim()}` : ""
-      }`;
-      const { data: order, error } = await supabase
-        .from("orders")
-        .insert({
-          customer_name: form.name.trim(),
-          phone: form.phone.replace(/\D/g, "").slice(-10),
-          address: fullAddress,
-          total: subtotal,
-          status: "New",
-        })
-        .select("id")
-        .single();
-      if (error) throw error;
-
-      const orderId = (order as { id: string }).id;
-      const { error: itemsError } = await supabase.from("order_items").insert(
-        items.map((i) => ({
-          order_id: orderId,
-          product_id: i.productId,
-          product_name: i.name,
-          size: i.size,
-          colour: i.colour,
-          quantity: i.quantity,
-          price: i.price,
-        })),
-      );
-      if (itemsError) throw itemsError;
-
-      const ref = `WR-${orderId.slice(0, 8).toUpperCase()}`;
-      window.open(whatsappLink(buildMessage(ref)), "_blank", "noopener");
-      setDone(ref);
-      clear();
-    } catch (err) {
-      console.error(err);
-      setErrors({ form: "We couldn't save your order. Please try again or message us directly." });
-    } finally {
-      setSending(false);
-    }
+    const { ref } = openWhatsAppOrder(items, {
+      name: form.name.trim(),
+      phone: form.phone.replace(/\D/g, "").slice(-10),
+      address: form.address.trim(),
+      pincode: form.pincode.trim(),
+      notes: form.notes.trim(),
+    });
+    setDone(ref);
+    clear();
+    setSending(false);
   };
 
   if (done) {
