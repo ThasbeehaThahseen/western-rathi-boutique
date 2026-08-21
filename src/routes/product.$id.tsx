@@ -1,20 +1,19 @@
-import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { Check, ChevronLeft, Ruler, ShoppingBag } from "lucide-react";
 import { productQuery, productsQuery, productImage } from "@/lib/catalog";
 import { ProductCard } from "@/components/site/ProductCard";
-import {
-  COLOUR_SWATCHES,
-  SIZE_CHART,
-  TERMS,
-  formatPrice,
-  whatsappLink,
-} from "@/lib/brand";
+import { COLOUR_SWATCHES, SIZE_CHART, TERMS, formatPrice } from "@/lib/brand";
 import { useCart } from "@/lib/cart";
+import { openWhatsAppOrder } from "@/lib/order";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/product/$id")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    size: typeof search["size"] === "string" ? search["size"] : "",
+    colour: typeof search["colour"] === "string" ? search["colour"] : "",
+  }),
   head: (ctx) => {
     const name = (ctx.loaderData as { name?: string } | undefined)?.name;
     return {
