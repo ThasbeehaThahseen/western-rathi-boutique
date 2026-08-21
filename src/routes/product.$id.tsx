@@ -10,9 +10,11 @@ import { openWhatsAppOrder } from "@/lib/order";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/product/$id")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    size: typeof search["size"] === "string" ? search["size"] : "",
-    colour: typeof search["colour"] === "string" ? search["colour"] : "",
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { size?: string; colour?: string } => ({
+    ...(typeof search["size"] === "string" ? { size: search["size"] } : {}),
+    ...(typeof search["colour"] === "string" ? { colour: search["colour"] } : {}),
   }),
   head: (ctx) => {
     const name = (ctx.loaderData as { name?: string } | undefined)?.name;
