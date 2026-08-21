@@ -32,30 +32,6 @@ function CartPage() {
 
   const update = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
-  const buildMessage = (orderRef: string) => {
-    const lines = [
-      "*NEW ORDER — WESTERN RATHI*",
-      "",
-      `*Order Ref:* ${orderRef}`,
-      "",
-      "*Items*",
-      ...items.map(
-        (i, n) =>
-          `${n + 1}. ${i.name}\n   Size: ${i.size} | Colour: ${i.colour}\n   Qty: ${i.quantity} × ${formatPrice(i.price)} = ${formatPrice(i.quantity * i.price)}`,
-      ),
-      "",
-      `*Total:* ${formatPrice(subtotal)}`,
-      "",
-      "*Customer Details*",
-      `Name: ${form.name}`,
-      `Phone: ${form.phone}`,
-      `Address: ${form.address}`,
-      `Pincode: ${form.pincode}`,
-    ];
-    if (form.notes.trim()) lines.push(`Notes: ${form.notes}`);
-    lines.push("", "Please confirm availability and share payment details. Thank you!");
-    return lines.join("\n");
-  };
 
   const validate = () => {
     const e: Record<string, string> = {};
