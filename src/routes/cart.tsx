@@ -2,8 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useCart } from "@/lib/cart";
-import { formatPrice, whatsappLink, WHATSAPP_DISPLAY } from "@/lib/brand";
-import { supabase } from "@/integrations/supabase/client";
+import { formatPrice, WHATSAPP_DISPLAY } from "@/lib/brand";
+import { openWhatsAppOrder } from "@/lib/order";
 
 export const Route = createFileRoute("/cart")({
   head: () => ({
