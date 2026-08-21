@@ -108,13 +108,23 @@ function ProductPage() {
 
   const handleBuyNow = () => {
     if (!validate()) return;
-    addItem(buildItem());
-    void navigate({ to: "/cart" });
+    setBuyError(null);
+    setBuyOpen(true);
   };
 
-  const enquiry = whatsappLink(
-    `Hi Western Rathi! I'd like to know more about *${product.name}* (${formatPrice(product.price)}).`,
-  );
+  const submitBuyNow = () => {
+    if (buyForm.name.trim().length < 2) return setBuyError("Please enter your name.");
+    if (!/^[6-9]\d{9}$/.test(buyForm.phone.replace(/\D/g, "").slice(-10)))
+      return setBuyError("Enter a valid 10-digit mobile number.");
+    if (buyForm.address.trim().length < 10) return setBuyError("Please enter your full address.");
+    setBuyError(null);
+    openWhatsAppOrder([buildItem()], {
+      name: buyForm.name.trim(),
+      phone: buyForm.phone.replace(/\D/g, "").slice(-10),
+      address: buyForm.address.trim(),
+    });
+    setBuyOpen(false);
+  };
 
   return (
     <div className="mx-auto max-w-6xl px-3 pt-2 pb-8 sm:px-5">
