@@ -44,50 +44,19 @@ function CartPage() {
     return Object.keys(e).length === 0;
   };
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (items.length === 0 || !validate()) return;
     setSending(true);
-    try {
-      const fullAddress = `${form.address.trim()} - ${form.pincode.trim()}${
-        form.notes.trim() ? ` | Notes: ${form.notes.trim()}` : ""
-      }`;
-      const { data: order, error } = await supabase
-        .from("orders")
-        .insert({
-          customer_name: form.name.trim(),
-          phone: form.phone.replace(/\D/g, "").slice(-10),
-          address: fullAddress,
-          total: subtotal,
-          status: "New",
-        })
-        .select("id")
-        .single();
-      if (error) throw error;
-
-      const orderId = (order as { id: string }).id;
-      const { error: itemsError } = await supabase.from("order_items").insert(
-        items.map((i) => ({
-          order_id: orderId,
-          product_id: i.productId,
-          product_name: i.name,
-          size: i.size,
-          colour: i.colour,
-          quantity: i.quantity,
-          price: i.price,
-        })),
-      );
-      if (itemsError) throw itemsError;
-
-      const ref = `WR-${orderId.slice(0, 8).toUpperCase()}`;
-      window.open(whatsappLink(buildMessage(ref)), "_blank", "noopener");
-      setDone(ref);
-      clear();
-    } catch (err) {
-      console.error(err);
-      setErrors({ form: "We couldn't save your order. Please try again or message us directly." });
-    } finally {
-      setSending(false);
-    }
+    const { ref } = openWhatsAppOrder(items, {
+      name: form.name.trim(),
+      phone: form.phone.replace(/\D/g, "").slice(-10),
+      address: form.address.trim(),
+      pincode: form.pincode.trim(),
+      notes: form.notes.trim(),
+    });
+    setDone(ref);
+    clear();
+    setSending(false);
   };
 
   if (done) {
