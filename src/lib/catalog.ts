@@ -43,6 +43,7 @@ function normalise(row: Record<string, unknown>): Product {
     description: (row["description"] as string | null) ?? null,
     instagram_url: (row["instagram_url"] as string | null) ?? null,
     featured: Boolean(row["featured"]),
+    featured_section: row["featured_section"] === "editors" ? "editors" : "fresh",
     created_at: String(row["created_at"]),
   };
 }
