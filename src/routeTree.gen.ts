@@ -15,6 +15,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as CategorySlugRouteImport } from './routes/category.$slug'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 
@@ -48,6 +49,11 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const CategorySlugRoute = CategorySlugRouteImport.update({
   id: '/category/$slug',
   path: '/category/$slug',
@@ -62,33 +68,35 @@ const ProductIdRoute = ProductIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/cart': typeof CartRoute
   '/shop': typeof ShopRoute
   '/terms': typeof TermsRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/admin': typeof AdminRoute
   '/cart': typeof CartRoute
   '/shop': typeof ShopRoute
   '/terms': typeof TermsRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
+  '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/admin': typeof AdminRoute
+  '/admin': typeof AdminRouteWithChildren
   '/cart': typeof CartRoute
   '/shop': typeof ShopRoute
   '/terms': typeof TermsRoute
   '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
+  '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,16 +109,17 @@ export interface FileRouteTypes {
     | '/terms'
     | '/category/$slug'
     | '/product/$id'
+    | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/about'
-    | '/admin'
     | '/cart'
     | '/shop'
     | '/terms'
     | '/category/$slug'
     | '/product/$id'
+    | '/admin'
   id:
     | '__root__'
     | '/'
@@ -121,12 +130,13 @@ export interface FileRouteTypes {
     | '/terms'
     | '/category/$slug'
     | '/product/$id'
+    | '/admin/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AboutRoute: typeof AboutRoute
-  AdminRoute: typeof AdminRoute
+  AdminRoute: typeof AdminRouteWithChildren
   CartRoute: typeof CartRoute
   ShopRoute: typeof ShopRoute
   TermsRoute: typeof TermsRoute
@@ -178,6 +188,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/category/$slug': {
       id: '/category/$slug'
       path: '/category/$slug'
@@ -195,10 +212,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
-  AdminRoute: AdminRoute,
+  AdminRoute: AdminRouteWithChildren,
   CartRoute: CartRoute,
   ShopRoute: ShopRoute,
   TermsRoute: TermsRoute,
