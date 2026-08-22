@@ -1,0 +1,2 @@
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS featured_section text NOT NULL DEFAULT 'fresh';
+ALTER TABLE public.products ADD CONSTRAINT products_featured_section_check CHECK (featured_section IN ('fresh','editors'));
