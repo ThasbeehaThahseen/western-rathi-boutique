@@ -130,6 +130,7 @@ export type Database = {
           description: string | null
           fabric: string | null
           featured: boolean
+          featured_section: string
           id: string
           instagram_url: string | null
           media: Json
@@ -146,6 +147,7 @@ export type Database = {
           description?: string | null
           fabric?: string | null
           featured?: boolean
+          featured_section?: string
           id?: string
           instagram_url?: string | null
           media?: Json
@@ -162,6 +164,7 @@ export type Database = {
           description?: string | null
           fabric?: string | null
           featured?: boolean
+          featured_section?: string
           id?: string
           instagram_url?: string | null
           media?: Json
