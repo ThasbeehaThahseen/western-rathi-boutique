@@ -16,6 +16,7 @@ export type Product = {
   description: string | null;
   instagram_url: string | null;
   featured: boolean;
+  featured_section: "fresh" | "editors";
   created_at: string;
 };
 
