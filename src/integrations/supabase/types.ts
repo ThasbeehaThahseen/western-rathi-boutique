@@ -184,6 +184,33 @@ export type Database = {
           },
         ]
       }
+      reviews: {
+        Row: {
+          comment: string
+          created_at: string
+          customer_name: string
+          featured: boolean
+          id: string
+          rating: number
+        }
+        Insert: {
+          comment: string
+          created_at?: string
+          customer_name: string
+          featured?: boolean
+          id?: string
+          rating?: number
+        }
+        Update: {
+          comment?: string
+          created_at?: string
+          customer_name?: string
+          featured?: boolean
+          id?: string
+          rating?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
