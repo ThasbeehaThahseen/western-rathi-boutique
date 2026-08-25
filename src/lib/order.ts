@@ -44,9 +44,10 @@ export function buildOrderMessage(
       `Size: ${i.size}`,
       `Colour: ${i.colour}`,
       `Quantity: ${i.quantity}`,
-      `Price: ${formatPrice(i.price)}  (${i.quantity} × ${formatPrice(i.price)} = ${formatPrice(
+      // Bold plain text only — no URL here, so WhatsApp never renders the price as a link.
+      `*Price: ${formatPrice(i.price)}*  (${i.quantity} × ${formatPrice(i.price)} = *${formatPrice(
         i.price * i.quantity,
-      )})`,
+      )}*)`,
       `Link: ${productLink(i)}`,
     );
   });
@@ -101,6 +102,49 @@ export async function logOrder(
   }
 }
 
+// ----- Recently ordered (personal, per-device history) -----
+
+export type OrderedItem = CartItem & { orderedAt: string };
+
+const RECENT_KEY = "wr-recent-orders-v1";
+const RECENT_LIMIT = 12;
+
+const recentKey = (i: Pick<CartItem, "productId" | "size" | "colour">) =>
+  `${i.productId}|${i.size}|${i.colour}`;
+
+export function getRecentlyOrdered(): OrderedItem[] {
+  try {
+    const raw = window.localStorage.getItem(RECENT_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as OrderedItem[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function recordOrderedItems(items: CartItem[]): void {
+  try {
+    const now = new Date().toISOString();
+    const merged: OrderedItem[] = [
+      ...items.map((i) => ({ ...i, orderedAt: now })),
+      ...getRecentlyOrdered(),
+    ];
+    const seen = new Set<string>();
+    const out: OrderedItem[] = [];
+    for (const item of merged) {
+      const k = recentKey(item);
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(item);
+      if (out.length >= RECENT_LIMIT) break;
+    }
+    window.localStorage.setItem(RECENT_KEY, JSON.stringify(out));
+  } catch {
+    /* ignore */
+  }
+}
+
 export function openWhatsAppOrder(
   items: CartItem[],
   customer: Customer,
@@ -112,6 +156,7 @@ export function openWhatsAppOrder(
   const ref = makeOrderRef(orderId);
   const url = whatsappLink(buildOrderMessage(items, customer, ref));
   window.open(url, "_blank", "noopener");
+  recordOrderedItems(items);
   void logOrder(orderId, items, customer);
   return { ref, orderId };
 }
